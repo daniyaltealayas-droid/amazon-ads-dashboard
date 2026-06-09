@@ -67,10 +67,10 @@ async function adsGet(path) {
   return res.json();
 }
 
-async function adsPost(path, body) {
+async function adsPost(path, body, contentType) {
   const res = await fetch(`${state.proxyUrl}/ads${path}`, {
     method: 'POST',
-    headers: { ...getHeaders(), 'Content-Type': 'application/vnd.spCampaign.v3+json' },
+    headers: { ...getHeaders(), 'Content-Type': contentType || 'application/json' },
     body: JSON.stringify(body),
   });
   if (!res.ok) { const t = await res.text(); throw new Error(`${res.status}: ${t.slice(0,160)}`); }
@@ -165,7 +165,7 @@ async function loadOverview() {
     const data = await adsPost('/sp/campaigns/list', {
       stateFilter: { include: ['ENABLED', 'PAUSED'] },
       maxResults: 100,
-    });
+    }, 'application/vnd.spCampaign.v3+json');
     const campaigns = data.campaigns || [];
     document.getElementById('m-impressions').textContent = campaigns.length + ' campaigns';
     document.getElementById('m-clicks').textContent = '—';
@@ -189,7 +189,7 @@ async function loadCampaigns() {
     const data = await adsPost('/sp/campaigns/list', {
       stateFilter: { include: ['ENABLED', 'PAUSED', 'ARCHIVED'] },
       maxResults: 100,
-    });
+    }, 'application/vnd.spCampaign.v3+json');
     state.campaigns = data.campaigns || [];
     renderCampaigns();
   } catch (e) {
@@ -233,7 +233,7 @@ async function loadKeywords() {
     const data = await adsPost('/sp/keywords/list', {
       stateFilter: { include: ['ENABLED', 'PAUSED'] },
       maxResults: 200,
-    });
+    }, 'application/vnd.spKeyword.v3+json');
     state.keywords = data.keywords || [];
     renderKeywords();
     renderBidsTable();

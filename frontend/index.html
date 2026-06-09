@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amazon Ads Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="screen-auth" class="screen active">
+  <div class="auth-wrap">
+    <div class="auth-logo">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#FF9900"/>
+        <path d="M8 20c4-2 12-2 16 0" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        <path d="M22 18l2 2-2 2" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div>
+        <div class="auth-title">Amazon Ads Dashboard</div>
+        <div class="auth-subtitle">Connect your Ads API credentials</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div id="auth-error" class="error-box" style="display:none;"></div>
+
+      <label for="proxy-url">Proxy URL <span class="hint">(your Cloudflare Worker)</span></label>
+      <input id="proxy-url" type="url" placeholder="https://amazon-ads-proxy.yourname.workers.dev" />
+
+      <label for="client-id">Client ID</label>
+      <input id="client-id" type="text" placeholder="amzn1.application-oa2-client.xxx" autocomplete="off" />
+
+      <label for="client-secret">Client Secret</label>
+      <input id="client-secret" type="password" placeholder="••••••••••••••••" />
+
+      <label for="refresh-token">Refresh Token</label>
+      <input id="refresh-token" type="password" placeholder="Atzr|xxx..." />
+
+      <label for="region">Region</label>
+      <select id="region">
+        <option value="na">North America (NA)</option>
+        <option value="eu">Europe (EU)</option>
+        <option value="fe">Far East (FE)</option>
+      </select>
+
+      <button class="btn-primary" onclick="connectAds()">Connect to Amazon Ads</button>
+      <p class="footnote">Credentials are used only in your browser and never sent to any server except your own proxy.</p>
+    </div>
+  </div>
+</div>
+
+<!-- LOADING SCREEN -->
+<div id="screen-loading" class="screen">
+  <div class="loading-center">
+    <div class="spinner"></div>
+    <span id="loading-msg">Fetching access token...</span>
+  </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div id="screen-main" class="screen">
+  <header class="topbar">
+    <div class="topbar-left">
+      <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="32" height="32" rx="8" fill="#FF9900"/>
+        <path d="M8 20c4-2 12-2 16 0" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M22 18l2 2-2 2" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="topbar-title">Amazon Ads</span>
+      <div id="profile-chips" class="profile-chips"></div>
+    </div>
+    <button class="btn-sm" onclick="disconnect()">Disconnect</button>
+  </header>
+
+  <main class="main-content">
+    <nav class="tab-nav" id="main-nav">
+      <button class="tab-btn active" onclick="showTab('overview', this)">Overview</button>
+      <button class="tab-btn" onclick="showTab('campaigns', this)">Campaigns</button>
+      <button class="tab-btn" onclick="showTab('keywords', this)">Keywords</button>
+      <button class="tab-btn" onclick="showTab('bids', this)">Bid Manager</button>
+    </nav>
+
+    <!-- OVERVIEW TAB -->
+    <div id="tab-overview" class="tab-panel">
+      <div class="metrics-grid" id="metrics-grid">
+        <div class="metric"><div class="metric-label">Impressions</div><div class="metric-val" id="m-impressions">—</div></div>
+        <div class="metric"><div class="metric-label">Clicks</div><div class="metric-val" id="m-clicks">—</div></div>
+        <div class="metric"><div class="metric-label">Spend (30d)</div><div class="metric-val" id="m-spend">—</div></div>
+        <div class="metric"><div class="metric-label">Sales (30d)</div><div class="metric-val" id="m-sales">—</div></div>
+        <div class="metric"><div class="metric-label">ACOS</div><div class="metric-val" id="m-acos">—</div></div>
+        <div class="metric"><div class="metric-label">ROAS</div><div class="metric-val" id="m-roas">—</div></div>
+        <div class="metric"><div class="metric-label">CTR</div><div class="metric-val" id="m-ctr">—</div></div>
+        <div class="metric"><div class="metric-label">CPC</div><div class="metric-val" id="m-cpc">—</div></div>
+      </div>
+      <div id="overview-loading" class="loading-row"><span class="spinner sm"></span> Loading overview...</div>
+    </div>
+
+    <!-- CAMPAIGNS TAB -->
+    <div id="tab-campaigns" class="tab-panel" style="display:none;">
+      <div class="panel-header">
+        <span class="panel-title">Campaigns</span>
+        <button class="btn-sm" onclick="loadCampaigns()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Type</th><th>State</th><th>Daily Budget</th><th>Action</th></tr></thead>
+          <tbody id="campaigns-body"><tr><td colspan="5" class="loading-row"><span class="spinner sm"></span> Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- KEYWORDS TAB -->
+    <div id="tab-keywords" class="tab-panel" style="display:none;">
+      <div class="panel-header">
+        <span class="panel-title">Keywords</span>
+        <button class="btn-sm" onclick="loadKeywords()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Keyword</th><th>Match Type</th><th>Bid</th><th>State</th><th>Action</th></tr></thead>
+          <tbody id="keywords-body"><tr><td colspan="5" class="loading-row"><span class="spinner sm"></span> Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BID MANAGER TAB -->
+    <div id="tab-bids" class="tab-panel" style="display:none;">
+      <div class="panel-title" style="margin-bottom:12px;">Bulk Bid Manager</div>
+      <div class="card bid-controls">
+        <div class="bid-row">
+          <div class="field">
+            <label for="bid-pct">Adjustment (%)</label>
+            <input type="number" id="bid-pct" value="10" min="-90" max="900" />
+          </div>
+          <div class="field">
+            <label for="bid-dir">Direction</label>
+            <select id="bid-dir">
+              <option value="increase">Increase</option>
+              <option value="decrease">Decrease</option>
+            </select>
+          </div>
+          <button class="btn-sm" style="align-self:flex-end;" onclick="previewBids()">Preview</button>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-top:12px;">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="select-all" onchange="toggleAll(this)" /></th>
+              <th>Keyword</th>
+              <th>Current Bid</th>
+              <th>New Bid</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="bids-body"><tr><td colspan="5" class="loading-row">Load Keywords tab first.</td></tr></tbody>
+        </table>
+      </div>
+      <button class="btn-primary" style="margin-top:14px;max-width:220px;" onclick="saveBids()">Save bid changes</button>
+    </div>
+
+  </main>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+name = "amazon-ads-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# Uncomment to bind a KV namespace for caching tokens (optional)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-namespace-id"
+
+[vars]
+# Override this with your actual GitHub Pages URL via `wrangler secret put ALLOWED_ORIGIN`
+# During development leave as * — restrict before going to production
+ALLOWED_ORIGIN = "*"

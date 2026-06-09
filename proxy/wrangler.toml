@@ -10,4 +10,4 @@ compatibility_date = "2024-01-01"
 [vars]
 # Override this with your actual GitHub Pages URL via `wrangler secret put ALLOWED_ORIGIN`
 # During development leave as * — restrict before going to production
-ALLOWED_ORIGIN = "*"
+

@@ -171,7 +171,7 @@ async function loadOverview() {
     const fmt30 = d => d.toISOString().slice(0, 10).replace(/-/g, '');
 
     const data = await adsGet(
-      `/v2/sp/campaigns/report?startDate=${fmt30(start)}&endDate=${fmt30(today)}&metrics=impressions,clicks,cost,attributedSales30d`
+      `/v3/sp/campaigns/report?startDate=${fmt30(start)}&endDate=${fmt30(today)}&metrics=impressions,clicks,cost,attributedSales30d`
     );
 
     let imp = 0, clk = 0, spend = 0, sales = 0;
@@ -204,7 +204,7 @@ async function loadCampaigns() {
   document.getElementById('campaigns-body').innerHTML =
     '<tr><td colspan="5" class="loading-row"><span class="spinner sm"></span> Loading…</td></tr>';
   try {
-    const data = await adsGet('/v2/sp/campaigns?stateFilter=enabled,paused,archived&count=100');
+    const data = await adsGet('/v3/sp/campaigns');
     state.campaigns = Array.isArray(data) ? data : (data.campaigns || []);
     renderCampaigns();
   } catch (e) {
@@ -235,7 +235,7 @@ function renderCampaigns() {
 async function toggleCampaign(campaignId, currentState) {
   const newState = currentState === 'enabled' ? 'paused' : 'enabled';
   try {
-    await adsPut('/v2/sp/campaigns', [{ campaignId, state: newState }]);
+    await adsPut('/v3/sp/campaigns', [{ campaignId, state: newState }]);
     await loadCampaigns();
   } catch (e) {
     alert('Failed: ' + e.message);
@@ -248,7 +248,7 @@ async function loadKeywords() {
   document.getElementById('keywords-body').innerHTML =
     '<tr><td colspan="5" class="loading-row"><span class="spinner sm"></span> Loading…</td></tr>';
   try {
-    const data = await adsGet('/v2/sp/keywords?stateFilter=enabled,paused&count=200');
+    const data = await adsGet('/v3/sp/keywords');
     state.keywords = Array.isArray(data) ? data : (data.keywords || []);
     renderKeywords();
     renderBidsTable();
@@ -283,7 +283,7 @@ async function editBid(keywordId) {
   if (input === null || isNaN(input)) return;
   const bid = Math.max(0.02, parseFloat(parseFloat(input).toFixed(2)));
   try {
-    await adsPut('/v2/sp/keywords', [{ keywordId, bid }]);
+    await adsPut('/v3/sp/keywords', [{ keywordId, bid }]);
     await loadKeywords();
   } catch (e) {
     alert('Failed: ' + e.message);
@@ -339,7 +339,7 @@ async function saveBids() {
   if (!updates.length) { alert('Select at least one keyword.'); return; }
 
   try {
-    await adsPut('/v2/sp/keywords', updates);
+    await adsPut('/v3/sp/keywords', updates);
     updates.forEach(u => {
       const el = document.getElementById('bid-status-' + u.keywordId);
       if (el) el.innerHTML = '<span class="badge badge-green">Saved</span>';

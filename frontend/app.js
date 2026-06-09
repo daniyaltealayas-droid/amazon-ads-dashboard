@@ -124,8 +124,8 @@ async function loadProfiles() {
     chips.appendChild(b);
   });
   if (state.profiles.length > 0) state.profileId = String(state.profiles[0].profileId);
-  show('screen-main');
-  loadAllData();
+show('screen-main');
+setTimeout(loadAllData, 300);
 }
 
 function disconnect() {
